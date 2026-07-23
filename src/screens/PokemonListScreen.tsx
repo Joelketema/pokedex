@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
@@ -12,6 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Searchbar, Surface, Chip } from "react-native-paper";
 import { useGetPokemonList, fetchPokemonDetail } from "../services/queries/pokemonQueries";
 import { PokemonCard } from "../components/PokemonCard";
 import { PokeballHeader } from "../components/PokeballHeader";
@@ -21,20 +21,20 @@ import { FormattedPokemon } from "../interfaces/pokemon";
 
 // Custom vector sort icons (pure React Native primitives)
 const NumberSortIcon: React.FC<{ active: boolean }> = ({ active }) => (
-  <View style={[styles.iconBox, active && styles.iconBoxActive]}>
-    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]}>#</Text>
+  <View style={[styles.iconBox, active && styles.iconBoxActive]} className={`px-1 py-0.5 rounded mr-1.5 ${active ? 'bg-white/25' : 'bg-gray-200'}`}>
+    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]} className={`text-[10px] font-extrabold ${active ? 'text-white' : 'text-gray-600'}`}>#</Text>
   </View>
 );
 
 const AZSortIcon: React.FC<{ active: boolean }> = ({ active }) => (
-  <View style={[styles.iconBox, active && styles.iconBoxActive]}>
-    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]}>AZ↓</Text>
+  <View style={[styles.iconBox, active && styles.iconBoxActive]} className={`px-1 py-0.5 rounded mr-1.5 ${active ? 'bg-white/25' : 'bg-gray-200'}`}>
+    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]} className={`text-[10px] font-extrabold ${active ? 'text-white' : 'text-gray-600'}`}>AZ↓</Text>
   </View>
 );
 
 const ZASortIcon: React.FC<{ active: boolean }> = ({ active }) => (
-  <View style={[styles.iconBox, active && styles.iconBoxActive]}>
-    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]}>ZA↑</Text>
+  <View style={[styles.iconBox, active && styles.iconBoxActive]} className={`px-1 py-0.5 rounded mr-1.5 ${active ? 'bg-white/25' : 'bg-gray-200'}`}>
+    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]} className={`text-[10px] font-extrabold ${active ? 'text-white' : 'text-gray-600'}`}>ZA↑</Text>
   </View>
 );
 
@@ -153,7 +153,7 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
   const keyExtractor = useCallback((item: FormattedPokemon) => item.id.toString(), []);
 
   return (
-    <View style={styles.rootContainer}>
+    <View style={styles.rootContainer} className="flex-1 bg-[#1A50E2]">
       <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
 
       {/* Floating Error Toast Notification */}
@@ -165,99 +165,105 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
       />
 
       {/* Top Banner with Safe Area Inset & Pokeball Watermark */}
-      <View style={[styles.headerBanner, { paddingTop: topPadding }]}>
+      <View style={[styles.headerBanner, { paddingTop: topPadding }]} className="bg-[#1A50E2] px-6 pb-6 relative z-10">
         <PokeballHeader size={125} opacity={1.0} topOffset={topPadding - 8} rightOffset={-10} />
 
-        <Text style={styles.titleText}>Who are you{"\n"}looking for?</Text>
+        <Text style={styles.titleText} className="text-3xl font-extrabold text-white leading-9 mb-4.5">
+          Who are you{"\n"}looking for?
+        </Text>
 
-        {/* Search Input Container */}
-        <View style={styles.searchWrapper}>
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="E.g. Pikachu or Pi-"
-              placeholderTextColor="#9CA3AF"
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                setShowSuggestions(text.trim().length > 0);
-                if (!text) clearSearch();
-              }}
-              onFocus={() => {
-                if (searchQuery.trim().length > 0) setShowSuggestions(true);
-              }}
-              onSubmitEditing={() => handleSearch()}
-              returnKeyType="search"
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              style={styles.goButton}
-              activeOpacity={0.8}
-              onPress={() => handleSearch()}
-            >
-              <Text style={styles.goButtonText}>GO</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Search Input Container using React Native Paper Searchbar */}
+        <View style={styles.searchWrapper} className="relative z-50">
+          <Searchbar
+            placeholder="E.g. Pikachu or Pi-"
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              setShowSuggestions(text.trim().length > 0);
+              if (!text) clearSearch();
+            }}
+            onFocus={() => {
+              if (searchQuery.trim().length > 0) setShowSuggestions(true);
+            }}
+            onSubmitEditing={() => handleSearch()}
+            style={styles.searchBar}
+            className="bg-white rounded-full flex-1 elevation-4 shadow-md h-12"
+            inputStyle={styles.searchInput}
+            placeholderTextColor="#9CA3AF"
+            right={() => (
+              <TouchableOpacity
+                style={styles.goButton}
+                className="bg-zinc-800 rounded-full px-4 py-1.5 justify-center items-center mr-1"
+                activeOpacity={0.8}
+                onPress={() => handleSearch()}
+              >
+                <Text style={styles.goButtonText} className="text-white font-bold text-xs">GO</Text>
+              </TouchableOpacity>
+            )}
+          />
 
           {/* Predictive Search Suggestions Dropdown Overlay */}
           {showSuggestions && suggestions.length > 0 && (
-            <View style={styles.suggestionsContainer}>
+            <Surface style={styles.suggestionsContainer} className="absolute top-14 left-0 right-0 bg-white rounded-2xl py-1.5 z-50 elevation-4 shadow-lg" elevation={4}>
               {suggestions.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.suggestionItem}
+                  className="flex-row justify-between items-center px-4 py-2.5 border-b border-gray-100"
                   activeOpacity={0.7}
                   onPress={() => handleSelectSuggestion(item)}
                 >
-                  <Text style={styles.suggestionName}>{item.displayName}</Text>
-                  <Text style={styles.suggestionId}>{item.formattedId}</Text>
+                  <Text style={styles.suggestionName} className="text-sm font-semibold text-gray-800">{item.displayName}</Text>
+                  <Text style={styles.suggestionId} className="text-xs font-semibold text-gray-500">{item.formattedId}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </Surface>
           )}
         </View>
       </View>
 
       {/* Body / Pokémon Grid Section */}
-      <View style={styles.contentContainer}>
+      <Surface style={styles.contentContainer} className="flex-1 bg-gray-100 rounded-t-3xl pt-3 overflow-hidden" elevation={0}>
         {/* Alphabetical & ID Sorting Control Bar */}
         {!isLoading && !isSearching && !isError && !searchError && (
-          <View style={styles.sortBar}>
-            <Text style={styles.sortLabel}>Sort by:</Text>
+          <View style={styles.sortBar} className="flex-row items-center px-4 pb-2.5">
+            <Text style={styles.sortLabel} className="text-xs font-bold text-gray-600 mr-2">Sort by:</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <TouchableOpacity
-                style={[styles.sortChip, sortBy === "id" && styles.sortChipActive]}
+              <Chip
+                selected={sortBy === "id"}
                 onPress={() => setSortBy("id")}
-                activeOpacity={0.8}
+                style={[styles.sortChip, sortBy === "id" && styles.sortChipActive]}
+                className={`mr-2 rounded-xl border ${sortBy === "id" ? 'bg-[#1A50E2] border-[#1A50E2]' : 'bg-white border-gray-200'}`}
+                textStyle={[styles.sortChipText, sortBy === "id" && styles.sortChipTextActive]}
+                compact
               >
                 <NumberSortIcon active={sortBy === "id"} />
-                <Text style={[styles.sortChipText, sortBy === "id" && styles.sortChipTextActive]}>
-                  Number #
-                </Text>
-              </TouchableOpacity>
+                Number #
+              </Chip>
 
-              <TouchableOpacity
-                style={[styles.sortChip, sortBy === "az" && styles.sortChipActive]}
+              <Chip
+                selected={sortBy === "az"}
                 onPress={() => setSortBy("az")}
-                activeOpacity={0.8}
+                style={[styles.sortChip, sortBy === "az" && styles.sortChipActive]}
+                className={`mr-2 rounded-xl border ${sortBy === "az" ? 'bg-[#1A50E2] border-[#1A50E2]' : 'bg-white border-gray-200'}`}
+                textStyle={[styles.sortChipText, sortBy === "az" && styles.sortChipTextActive]}
+                compact
               >
                 <AZSortIcon active={sortBy === "az"} />
-                <Text style={[styles.sortChipText, sortBy === "az" && styles.sortChipTextActive]}>
-                  A - Z
-                </Text>
-              </TouchableOpacity>
+                A - Z
+              </Chip>
 
-              <TouchableOpacity
-                style={[styles.sortChip, sortBy === "za" && styles.sortChipActive]}
+              <Chip
+                selected={sortBy === "za"}
                 onPress={() => setSortBy("za")}
-                activeOpacity={0.8}
+                style={[styles.sortChip, sortBy === "za" && styles.sortChipActive]}
+                className={`mr-2 rounded-xl border ${sortBy === "za" ? 'bg-[#1A50E2] border-[#1A50E2]' : 'bg-white border-gray-200'}`}
+                textStyle={[styles.sortChipText, sortBy === "za" && styles.sortChipTextActive]}
+                compact
               >
                 <ZASortIcon active={sortBy === "za"} />
-                <Text style={[styles.sortChipText, sortBy === "za" && styles.sortChipTextActive]}>
-                  Z - A
-                </Text>
-              </TouchableOpacity>
+                Z - A
+              </Chip>
             </ScrollView>
           </View>
         )}
@@ -266,17 +272,17 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
           /* Render Animated Skeleton Loader */
           <PokemonSkeleton />
         ) : isError ? (
-          <View style={styles.centerContainer}>
-            <Text style={styles.errorText}>Failed to load Pokémon list.</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-              <Text style={styles.retryButtonText}>Retry</Text>
+          <View style={styles.centerContainer} className="flex-1 justify-center items-center p-6">
+            <Text style={styles.errorText} className="text-sm text-red-500 text-center mb-4 font-medium">Failed to load Pokémon list.</Text>
+            <TouchableOpacity style={styles.retryButton} className="bg-[#1A50E2] px-5 py-2.5 rounded-full" onPress={() => refetch()}>
+              <Text style={styles.retryButtonText} className="text-white font-semibold">Retry</Text>
             </TouchableOpacity>
           </View>
         ) : searchError ? (
-          <View style={styles.centerContainer}>
-            <Text style={styles.errorText}>{searchError}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={clearSearch}>
-              <Text style={styles.retryButtonText}>Show All Pokémon</Text>
+          <View style={styles.centerContainer} className="flex-1 justify-center items-center p-6">
+            <Text style={styles.errorText} className="text-sm text-red-500 text-center mb-4 font-medium">{searchError}</Text>
+            <TouchableOpacity style={styles.retryButton} className="bg-[#1A50E2] px-5 py-2.5 rounded-full" onPress={clearSearch}>
+              <Text style={styles.retryButtonText} className="text-white font-semibold">Show All Pokémon</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -299,14 +305,14 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
             removeClippedSubviews={Platform.OS === "android"}
             ListFooterComponent={
               isFetchingNextPage ? (
-                <View style={styles.footerLoader}>
+                <View style={styles.footerLoader} className="py-4 items-center">
                   <ActivityIndicator size="small" color="#1A50E2" />
                 </View>
               ) : null
             }
           />
         )}
-      </View>
+      </Surface>
     </View>
   );
 };
@@ -334,35 +340,23 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 50,
   },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  searchBar: {
     backgroundColor: "#FFFFFF",
     borderRadius: 30,
-    paddingLeft: 14,
-    paddingRight: 6,
-    paddingVertical: 6,
+    height: 48,
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
   },
   searchInput: {
-    flex: 1,
     fontSize: 15,
     color: "#1F2937",
-    paddingVertical: Platform.OS === "ios" ? 8 : 4,
+    minHeight: 0,
+    alignSelf: "center",
   },
   goButton: {
     backgroundColor: "#27272A",
     borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -373,17 +367,13 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: "absolute",
-    top: 52,
+    top: 54,
     left: 0,
     right: 0,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingVertical: 6,
     elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
     zIndex: 100,
   },
   suggestionItem: {
@@ -426,18 +416,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   sortChip: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 14,
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  sortIcon: {
-    marginRight: 5,
+    height: "auto",
   },
   iconBox: {
     backgroundColor: "#F3F4F6",
@@ -501,3 +483,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+

@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
+import { Card, Surface } from "react-native-paper";
 import { FormattedPokemon } from "../interfaces/pokemon";
 import { TypeBadge } from "./TypeBadge";
 
@@ -10,35 +11,40 @@ interface PokemonCardProps {
 
 const PokemonCardComponent: React.FC<PokemonCardProps> = ({ pokemon, onPress }) => {
   return (
-    <TouchableOpacity
+    <Card
       style={styles.card}
-      activeOpacity={0.85}
+      className="flex-1 bg-white rounded-2xl p-3 m-2 min-h-[185px] justify-between shadow-md elevation-4"
       onPress={() => onPress(pokemon)}
     >
-      {/* Top Header Row: Name & Formatted ID */}
-      <View style={styles.headerRow}>
-        <Text numberOfLines={1} style={styles.nameText}>
-          {pokemon.displayName}
-        </Text>
-        <Text style={styles.idText}>{pokemon.formattedId}</Text>
-      </View>
+      <Surface style={styles.surface} className="flex-1 bg-white justify-between rounded-2xl" elevation={0}>
+        {/* Top Header Row: Name & Formatted ID */}
+        <View style={styles.headerRow} className="flex-row justify-between items-center mb-2">
+          <Text numberOfLines={1} style={styles.nameText} className="text-sm font-bold text-blue-600 flex-1 mr-1">
+            {pokemon.displayName}
+          </Text>
+          <Text style={styles.idText} className="text-xs font-semibold text-gray-500">
+            {pokemon.formattedId}
+          </Text>
+        </View>
 
-      {/* Center Image */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: pokemon.image }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      </View>
+        {/* Center Image */}
+        <View style={styles.imageContainer} className="items-center justify-center my-1 h-[90px]">
+          <Image
+            source={{ uri: pokemon.image }}
+            style={styles.image}
+            className="w-[85px] h-[85px]"
+            resizeMode="contain"
+          />
+        </View>
 
-      {/* Bottom Row: Type Badges */}
-      <View style={styles.typeRow}>
-        {pokemon.types.map((type) => (
-          <TypeBadge key={type} type={type} size="sm" />
-        ))}
-      </View>
-    </TouchableOpacity>
+        {/* Bottom Row: Type Badges */}
+        <View style={styles.typeRow} className="flex-row flex-wrap mt-1">
+          {pokemon.types.map((type) => (
+            <TypeBadge key={type} type={type} size="sm" />
+          ))}
+        </View>
+      </Surface>
+    </Card>
   );
 };
 
@@ -51,12 +57,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 12,
     margin: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
     elevation: 4,
     minHeight: 185,
+    justifyContent: "space-between",
+  },
+  surface: {
+    flex: 1,
+    backgroundColor: "transparent",
     justifyContent: "space-between",
   },
   headerRow: {
@@ -93,3 +100,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+

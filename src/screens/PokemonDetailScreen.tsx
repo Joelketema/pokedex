@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Surface, Chip } from "react-native-paper";
 import { useGetPokemonDetail } from "../services/queries/pokemonQueries";
 import { PokeballHeader } from "../components/PokeballHeader";
 import { TypeBadge } from "../components/TypeBadge";
@@ -35,25 +36,27 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
   const topPadding = (insets.top > 0 ? insets.top : (StatusBar.currentHeight || 20)) + 8;
 
   return (
-    <View style={styles.rootContainer}>
+    <View style={styles.rootContainer} className="flex-1 bg-[#1A50E2]">
       <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
 
       {/* Top Blue Header Bar with Safe Area Top Inset & Pokeball Watermark */}
-      <View style={[styles.headerBar, { paddingTop: topPadding, height: 60 + topPadding }]}>
+      <View style={[styles.headerBar, { paddingTop: topPadding, height: 60 + topPadding }]} className="bg-[#1A50E2] flex-row items-center px-5 relative overflow-hidden">
         <PokeballHeader size={110} opacity={1.0} topOffset={topPadding - 2} rightOffset={-10} />
         <TouchableOpacity
           style={styles.backButton}
+          className="w-10 h-10 justify-center items-center z-10"
           onPress={onBack}
           activeOpacity={0.7}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Text style={styles.backArrowText}>←</Text>
+          <Text style={styles.backArrowText} className="text-2xl text-white font-bold">←</Text>
         </TouchableOpacity>
       </View>
 
       {/* Detail Content Scroll Area */}
       <ScrollView
         style={styles.container}
+        className="flex-1 bg-gray-100 rounded-t-3xl"
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -62,97 +65,102 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
         ) : (
           <>
             {/* Card 1: Main Stats Card */}
-            <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <View>
-              <Text style={styles.idText}>{pokemon.formattedId}</Text>
-              <Text style={styles.nameText}>{pokemon.displayName}</Text>
-            </View>
-
-            {/* Type Badges */}
-            <View style={styles.typeBadgeContainer}>
-              {pokemon.types.map((type) => (
-                <TypeBadge key={type} type={type} size="md" />
-              ))}
-            </View>
-          </View>
-
-          {/* Stats & Interactive 360° Pokémon Artwork Layout */}
-          <View style={styles.statsBodyRow}>
-            {/* Left Column: Stat Bars */}
-            <View style={styles.statsColumn}>
-              <StatBar label="HP" value={pokemon.stats.hp} color="#47D1B1" />
-              <StatBar label="Attack" value={pokemon.stats.attack} color="#FB6C6C" />
-              <StatBar label="Defense" value={pokemon.stats.defense} color="#F8D030" />
-              <StatBar label="Speed" value={pokemon.stats.speed} color="#FF9D55" />
-            </View>
-
-            {/* Right Column: Interactive 3D Pokémon Artwork */}
-            <View style={styles.artworkColumn}>
-              <Interactive3DPokemon
-                imageUri={pokemon.image}
-                pokemonName={pokemon.displayName}
-                size={140}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Card 2: Breeding Card */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Breeding</Text>
-
-          <View style={styles.breedingRow}>
-            {/* Height Box */}
-            <View style={styles.breedingItem}>
-              <Text style={styles.breedingLabel}>Height</Text>
-              <View style={styles.breedingValuePill}>
-                <Text style={styles.breedingValueText}>
-                  {pokemon.heightFormatted}
-                </Text>
-              </View>
-            </View>
-
-            {/* Weight Box */}
-            <View style={styles.breedingItem}>
-              <Text style={styles.breedingLabel}>Weight</Text>
-              <View style={styles.breedingValuePill}>
-                <Text style={styles.breedingValueText}>
-                  {pokemon.weightFormatted}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Card 3: Moves Card */}
-        <View style={styles.card}>
-          <View style={styles.movesHeaderRow}>
-            <Text style={styles.sectionTitle}>Moves</Text>
-            <TouchableOpacity
-              style={styles.seeAllButton}
-              activeOpacity={0.8}
-              onPress={() => setShowAllMoves(!showAllMoves)}
-            >
-              <Text style={styles.seeAllText}>
-                {showAllMoves ? "Show less" : "See all"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Moves Tags */}
-          <View style={styles.movesContainer}>
-            {(showAllMoves ? pokemon.moves : pokemon.moves.slice(0, 6)).map(
-              (move) => (
-                <View key={move} style={styles.moveChip}>
-                  <Text style={styles.moveChipText}>
-                    {move.replace("-", " ").toUpperCase()}
-                  </Text>
+            <Surface style={styles.card} className="bg-white rounded-2xl p-4.5 mb-4 shadow-sm elevation-3" elevation={3}>
+              <View style={styles.cardHeaderRow} className="flex-row justify-between items-start mb-3">
+                <View>
+                  <Text style={styles.idText} className="text-xs font-semibold text-gray-500 mb-0.5">{pokemon.formattedId}</Text>
+                  <Text style={styles.nameText} className="text-2xl font-extrabold text-blue-900">{pokemon.displayName}</Text>
                 </View>
-              )
-            )}
-          </View>
-        </View>
+
+                {/* Type Badges */}
+                <View style={styles.typeBadgeContainer} className="flex-row items-center">
+                  {pokemon.types.map((type) => (
+                    <TypeBadge key={type} type={type} size="md" />
+                  ))}
+                </View>
+              </View>
+
+              {/* Stats & Interactive 360° Pokémon Artwork Layout */}
+              <View style={styles.statsBodyRow} className="flex-row items-center mt-2">
+                {/* Left Column: Stat Bars */}
+                <View style={styles.statsColumn} className="flex-1 pr-2">
+                  <StatBar label="HP" value={pokemon.stats.hp} color="#47D1B1" />
+                  <StatBar label="Attack" value={pokemon.stats.attack} color="#FB6C6C" />
+                  <StatBar label="Defense" value={pokemon.stats.defense} color="#F8D030" />
+                  <StatBar label="Speed" value={pokemon.stats.speed} color="#FF9D55" />
+                </View>
+
+                {/* Right Column: Interactive 3D Pokémon Artwork */}
+                <View style={styles.artworkColumn} className="w-[140px] items-center justify-center">
+                  <Interactive3DPokemon
+                    imageUri={pokemon.image}
+                    pokemonName={pokemon.displayName}
+                    size={140}
+                  />
+                </View>
+              </View>
+            </Surface>
+
+            {/* Card 2: Breeding Card */}
+            <Surface style={styles.card} className="bg-white rounded-2xl p-4.5 mb-4 shadow-sm elevation-3" elevation={3}>
+              <Text style={styles.sectionTitle} className="text-lg font-bold text-gray-800 mb-3">Breeding</Text>
+
+              <View style={styles.breedingRow} className="flex-row justify-between">
+                {/* Height Box */}
+                <View style={styles.breedingItem} className="flex-1 mx-1 items-center">
+                  <Text style={styles.breedingLabel} className="text-xs text-gray-500 font-medium mb-1.5">Height</Text>
+                  <Surface style={styles.breedingValuePill} className="bg-gray-100 rounded-xl py-2.5 px-3 w-full items-center" elevation={0}>
+                    <Text style={styles.breedingValueText} className="text-xs font-semibold text-gray-700">
+                      {pokemon.heightFormatted}
+                    </Text>
+                  </Surface>
+                </View>
+
+                {/* Weight Box */}
+                <View style={styles.breedingItem} className="flex-1 mx-1 items-center">
+                  <Text style={styles.breedingLabel} className="text-xs text-gray-500 font-medium mb-1.5">Weight</Text>
+                  <Surface style={styles.breedingValuePill} className="bg-gray-100 rounded-xl py-2.5 px-3 w-full items-center" elevation={0}>
+                    <Text style={styles.breedingValueText} className="text-xs font-semibold text-gray-700">
+                      {pokemon.weightFormatted}
+                    </Text>
+                  </Surface>
+                </View>
+              </View>
+            </Surface>
+
+            {/* Card 3: Moves Card */}
+            <Surface style={styles.card} className="bg-white rounded-2xl p-4.5 mb-4 shadow-sm elevation-3" elevation={3}>
+              <View style={styles.movesHeaderRow} className="flex-row justify-between items-center mb-3">
+                <Text style={styles.sectionTitle} className="text-lg font-bold text-gray-800 mb-0">Moves</Text>
+                <TouchableOpacity
+                  style={styles.seeAllButton}
+                  className="bg-zinc-900 rounded-full px-4 py-1.5"
+                  activeOpacity={0.8}
+                  onPress={() => setShowAllMoves(!showAllMoves)}
+                >
+                  <Text style={styles.seeAllText} className="text-white text-xs font-semibold">
+                    {showAllMoves ? "Show less" : "See all"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Moves Tags using React Native Paper Chip */}
+              <View style={styles.movesContainer} className="flex-row flex-wrap">
+                {(showAllMoves ? pokemon.moves : pokemon.moves.slice(0, 6)).map(
+                  (move) => (
+                    <Chip
+                      key={move}
+                      style={styles.moveChip}
+                      className="bg-gray-100 rounded-lg mr-1.5 mb-1.5"
+                      textStyle={styles.moveChipText}
+                      compact
+                    >
+                      {move.replace("-", " ").toUpperCase()}
+                    </Chip>
+                  )
+                )}
+              </View>
+            </Surface>
           </>
         )}
       </ScrollView>
@@ -200,10 +208,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
     elevation: 3,
   },
   cardHeaderRow: {
@@ -299,14 +303,16 @@ const styles = StyleSheet.create({
   moveChip: {
     backgroundColor: "#F3F4F6",
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
     marginRight: 6,
     marginBottom: 6,
+    height: "auto",
   },
   moveChipText: {
     fontSize: 11,
     color: "#4B5563",
     fontWeight: "600",
+    marginHorizontal: 0,
+    marginVertical: 0,
   },
 });
+
