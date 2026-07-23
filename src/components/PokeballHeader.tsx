@@ -4,18 +4,17 @@ import { View, StyleSheet } from "react-native";
 interface PokeballHeaderProps {
   size?: number;
   opacity?: number;
-  color?: string;
 }
 
 export const PokeballHeader: React.FC<PokeballHeaderProps> = ({
   size = 180,
-  opacity = 0.2,
-  color = "#FFFFFF",
+  opacity = 0.85,
 }) => {
-  const borderWidth = Math.max(size * 0.08, 6);
-  const bandHeight = Math.max(size * 0.07, 6);
-  const outerButtonSize = size * 0.32;
-  const innerButtonSize = size * 0.16;
+  const borderWidth = Math.max(size * 0.05, 5);
+  const bandHeight = Math.max(size * 0.09, 8);
+  const outerButtonSize = size * 0.38;
+  const middleButtonSize = size * 0.25;
+  const innerButtonSize = size * 0.12;
 
   return (
     <View
@@ -25,37 +24,35 @@ export const PokeballHeader: React.FC<PokeballHeaderProps> = ({
           width: size,
           height: size,
           opacity,
-          right: -size * 0.22,
-          top: -size * 0.22,
+          right: -size * 0.15,
+          top: -size * 0.12,
         },
       ]}
       pointerEvents="none"
     >
-      {/* Outer Main Circle */}
+      {/* Outer Ball Container */}
       <View
         style={[
-          styles.outerCircle,
+          styles.ballContainer,
           {
             width: size,
             height: size,
             borderRadius: size / 2,
             borderWidth: borderWidth,
-            borderColor: color,
+            borderColor: "#122262",
           },
         ]}
       >
-        {/* Horizontal Center Band */}
-        <View
-          style={[
-            styles.centerBand,
-            {
-              height: bandHeight,
-              backgroundColor: color,
-            },
-          ]}
-        />
+        {/* Top Maroon/Purple Hemisphere */}
+        <View style={styles.topHemisphere} />
 
-        {/* Center Button Ring & Inner Circle */}
+        {/* Bottom Soft Blue/Periwinkle Hemisphere */}
+        <View style={styles.bottomHemisphere} />
+
+        {/* Horizontal Center Dark Line */}
+        <View style={[styles.centerLine, { height: bandHeight }]} />
+
+        {/* Center Button Assembly */}
         <View
           style={[
             styles.outerButton,
@@ -63,22 +60,39 @@ export const PokeballHeader: React.FC<PokeballHeaderProps> = ({
               width: outerButtonSize,
               height: outerButtonSize,
               borderRadius: outerButtonSize / 2,
-              borderWidth: borderWidth * 0.8,
-              borderColor: color,
+              backgroundColor: "#122262",
             },
           ]}
         >
+          {/* Middle Button Ring (Light Blue) */}
           <View
             style={[
-              styles.innerButton,
+              styles.middleButton,
               {
-                width: innerButtonSize,
-                height: innerButtonSize,
-                borderRadius: innerButtonSize / 2,
-                backgroundColor: color,
+                width: middleButtonSize,
+                height: middleButtonSize,
+                borderRadius: middleButtonSize / 2,
+                backgroundColor: "#798CE4",
+                borderWidth: borderWidth * 0.7,
+                borderColor: "#122262",
               },
             ]}
-          />
+          >
+            {/* Inner Core Ring */}
+            <View
+              style={[
+                styles.innerButton,
+                {
+                  width: innerButtonSize,
+                  height: innerButtonSize,
+                  borderRadius: innerButtonSize / 2,
+                  backgroundColor: "#798CE4",
+                  borderWidth: borderWidth * 0.6,
+                  borderColor: "#122262",
+                },
+              ]}
+            />
+          </View>
         </View>
       </View>
     </View>
@@ -92,24 +106,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 0,
   },
-  outerCircle: {
+  ballContainer: {
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
-    backgroundColor: "transparent",
+    position: "relative",
   },
-  centerBand: {
+  topHemisphere: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "50%",
+    backgroundColor: "#591E42", // Dark maroon/purple top half matching screenshot
+  },
+  bottomHemisphere: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "50%",
+    backgroundColor: "#798CE4", // Soft light blue bottom half matching screenshot
+  },
+  centerLine: {
     position: "absolute",
     width: "140%",
+    backgroundColor: "#122262", // Dark navy center band matching screenshot
     zIndex: 1,
   },
   outerButton: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "transparent",
     zIndex: 2,
   },
-  innerButton: {
-    zIndex: 3,
+  middleButton: {
+    justifyContent: "center",
+    alignItems: "center",
   },
+  innerButton: {},
 });
