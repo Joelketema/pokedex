@@ -1,20 +1,48 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider as PaperProvider } from "react-native-paper";
+import { PokemonListScreen } from "./src/screens/PokemonListScreen";
+import { PokemonDetailScreen } from "./src/screens/PokemonDetailScreen";
+import { FormattedPokemon } from "./src/interfaces/pokemon";
+import "./global.css";
+
+// Create TanStack Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes cache
+    },
+  },
+});
 
 export default function App() {
+  const [selectedPokemon, setSelectedPokemon] = useState<FormattedPokemon | null>(null);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <QueryClientProvider client={queryClient}>
+      <PaperProvider>
+        <View style={styles.container}>
+          {selectedPokemon ? (
+            <PokemonDetailScreen
+              pokemon={selectedPokemon}
+              onBack={() => setSelectedPokemon(null)}
+            />
+          ) : (
+            <PokemonListScreen
+              onSelectPokemon={(pokemon) => setSelectedPokemon(pokemon)}
+            />
+          )}
+        </View>
+      </PaperProvider>
+    </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#1A50E2",
   },
 });
