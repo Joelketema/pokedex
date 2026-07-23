@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider as PaperProvider } from "react-native-paper";
+import { AnimatedSplashScreen } from "./src/components/AnimatedSplashScreen";
 import { PokemonListScreen } from "./src/screens/PokemonListScreen";
 import { PokemonDetailScreen } from "./src/screens/PokemonDetailScreen";
 import { FormattedPokemon } from "./src/interfaces/pokemon";
@@ -19,6 +20,7 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  const [isSplashActive, setIsSplashActive] = useState(true);
   const [selectedPokemon, setSelectedPokemon] = useState<FormattedPokemon | null>(null);
 
   return (
@@ -26,7 +28,9 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <PaperProvider>
           <View style={styles.container}>
-            {selectedPokemon ? (
+            {isSplashActive ? (
+              <AnimatedSplashScreen onFinish={() => setIsSplashActive(false)} />
+            ) : selectedPokemon ? (
               <PokemonDetailScreen
                 pokemon={selectedPokemon}
                 onBack={() => setSelectedPokemon(null)}
