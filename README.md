@@ -68,7 +68,7 @@ Designed with clean architecture, interactive 3D perspective artwork, custom ani
 
 Clone the repository and install dependencies:
 ```bash
-git clone https://github.com/your-username/pokedex-expo-app.git
+git clone https://github.com/your-username/pokedex.git
 cd pokedex-expo-app
 npm install
 ```
