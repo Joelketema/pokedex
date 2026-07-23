@@ -18,6 +18,25 @@ import { PokeballHeader } from "../components/PokeballHeader";
 import { PokemonSkeleton } from "../components/PokemonSkeleton";
 import { FormattedPokemon } from "../interfaces/pokemon";
 
+// Custom vector sort icons (pure React Native primitives)
+const NumberSortIcon: React.FC<{ active: boolean }> = ({ active }) => (
+  <View style={[styles.iconBox, active && styles.iconBoxActive]}>
+    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]}>#</Text>
+  </View>
+);
+
+const AZSortIcon: React.FC<{ active: boolean }> = ({ active }) => (
+  <View style={[styles.iconBox, active && styles.iconBoxActive]}>
+    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]}>AZ↓</Text>
+  </View>
+);
+
+const ZASortIcon: React.FC<{ active: boolean }> = ({ active }) => (
+  <View style={[styles.iconBox, active && styles.iconBoxActive]}>
+    <Text style={[styles.iconBoxText, active && styles.iconBoxTextActive]}>ZA↑</Text>
+  </View>
+);
+
 interface PokemonListScreenProps {
   onSelectPokemon: (pokemon: FormattedPokemon) => void;
 }
@@ -201,27 +220,33 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
               <TouchableOpacity
                 style={[styles.sortChip, sortBy === "id" && styles.sortChipActive]}
                 onPress={() => setSortBy("id")}
+                activeOpacity={0.8}
               >
+                <NumberSortIcon active={sortBy === "id"} />
                 <Text style={[styles.sortChipText, sortBy === "id" && styles.sortChipTextActive]}>
-                  🔢 ID #
+                  Number #
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.sortChip, sortBy === "az" && styles.sortChipActive]}
                 onPress={() => setSortBy("az")}
+                activeOpacity={0.8}
               >
+                <AZSortIcon active={sortBy === "az"} />
                 <Text style={[styles.sortChipText, sortBy === "az" && styles.sortChipTextActive]}>
-                  🔤 A - Z
+                  A - Z
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.sortChip, sortBy === "za" && styles.sortChipActive]}
                 onPress={() => setSortBy("za")}
+                activeOpacity={0.8}
               >
+                <ZASortIcon active={sortBy === "za"} />
                 <Text style={[styles.sortChipText, sortBy === "za" && styles.sortChipTextActive]}>
-                  🔤 Z - A
+                  Z - A
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -392,6 +417,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   sortChip: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -399,6 +426,27 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderWidth: 1,
     borderColor: "#E5E7EB",
+  },
+  sortIcon: {
+    marginRight: 5,
+  },
+  iconBox: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginRight: 6,
+  },
+  iconBoxActive: {
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+  },
+  iconBoxText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#4B5563",
+  },
+  iconBoxTextActive: {
+    color: "#FFFFFF",
   },
   sortChipActive: {
     backgroundColor: "#1A50E2",
