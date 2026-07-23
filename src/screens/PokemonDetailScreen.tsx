@@ -82,11 +82,10 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
               <StatBar label="Speed" value={pokemon.stats.speed} color="#FF9D55" />
             </View>
 
-            {/* Right Column: Interactive 360° Pokémon Artwork */}
+            {/* Right Column: Interactive 3D Pokémon Artwork */}
             <View style={styles.artworkColumn}>
               <Interactive3DPokemon
                 imageUri={pokemon.image}
-                backImageUri={pokemon.backImage}
                 pokemonName={pokemon.displayName}
                 size={140}
               />

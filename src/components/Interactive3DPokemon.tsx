@@ -1,11 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef } from "react";
 import {
   View,
-  Text,
   Image,
   Animated,
   PanResponder,
-  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 
@@ -18,233 +16,219 @@ interface Interactive3DPokemonProps {
 
 export const Interactive3DPokemon: React.FC<Interactive3DPokemonProps> = ({
   imageUri,
-  backImageUri,
-  pokemonName,
-  size = 145,
+  size = 140,
 }) => {
-  const [isAutoSpinning, setIsAutoSpinning] = useState(false);
-  const [showBackView, setShowBackView] = useState(false);
+  // Core tilt values (clamped, not full 360)
+  const tiltX = useRef(new Animated.Value(0)).current; // -1 to 1
+  const tiltY = useRef(new Animated.Value(0)).current; // -1 to 1
+  const liftScale = useRef(new Animated.Value(1)).current;
+  const isPressed = useRef(false);
 
-  // Animated rotation values
-  const rotateYAnim = useRef(new Animated.Value(0)).current;
-  const rotateXAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  // Auto-spin animation reference
-  const autoSpinAnim = useRef<Animated.CompositeAnimation | null>(null);
-
-  // Previous touch position memory
-  const lastX = useRef(0);
-  const lastY = useRef(0);
-  const currentDegY = useRef(0);
-  const currentDegX = useRef(0);
-
-  // Handle continuous rotation calculation & front/back flip detection
-  const updateRotation = (degY: number, degX: number) => {
-    currentDegY.current = degY;
-    currentDegX.current = degX;
-
-    rotateYAnim.setValue(degY);
-    rotateXAnim.setValue(degX);
-
-    // Normalize angle to 0-360 range to check front vs back
-    const normalizedY = ((degY % 360) + 360) % 360;
-    if (normalizedY > 90 && normalizedY < 270) {
-      setShowBackView(true);
-    } else {
-      setShowBackView(false);
-    }
-  };
-
-  // PanResponder for continuous 360° manual drag gesture
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
 
       onPanResponderGrant: () => {
-        if (isAutoSpinning) {
-          stopAutoSpin();
-        }
-        Animated.spring(scaleAnim, {
-          toValue: 1.15,
-          friction: 5,
+        isPressed.current = true;
+        // Lift up on press
+        Animated.spring(liftScale, {
+          toValue: 1.12,
+          friction: 6,
+          tension: 100,
           useNativeDriver: false,
         }).start();
       },
 
-      onPanResponderMove: (evt, gestureState) => {
-        // Map 1px touch movement to 1.5 degrees rotation
-        const deltaX = gestureState.dx - lastX.current;
-        const deltaY = gestureState.dy - lastY.current;
-
-        lastX.current = gestureState.dx;
-        lastY.current = gestureState.dy;
-
-        const nextDegY = currentDegY.current + deltaX * 1.5;
-        const nextDegX = currentDegX.current - deltaY * 1.5;
-
-        updateRotation(nextDegY, nextDegX);
+      onPanResponderMove: (_evt, gesture) => {
+        // Map gesture to -1..1 range (80px full travel)
+        const maxDrag = 80;
+        const nx = Math.max(-1, Math.min(1, gesture.dx / maxDrag));
+        const ny = Math.max(-1, Math.min(1, gesture.dy / maxDrag));
+        tiltX.setValue(nx);
+        tiltY.setValue(ny);
       },
 
       onPanResponderRelease: () => {
-        lastX.current = 0;
-        lastY.current = 0;
-
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 5,
-          useNativeDriver: false,
-        }).start();
+        isPressed.current = false;
+        // Spring back to resting position
+        Animated.parallel([
+          Animated.spring(tiltX, {
+            toValue: 0,
+            friction: 5,
+            tension: 60,
+            useNativeDriver: false,
+          }),
+          Animated.spring(tiltY, {
+            toValue: 0,
+            friction: 5,
+            tension: 60,
+            useNativeDriver: false,
+          }),
+          Animated.spring(liftScale, {
+            toValue: 1,
+            friction: 6,
+            tension: 80,
+            useNativeDriver: false,
+          }),
+        ]).start();
       },
     })
   ).current;
 
-  // Toggle Auto 360° Continuous Spin
-  const toggleAutoSpin = () => {
-    if (isAutoSpinning) {
-      stopAutoSpin();
-    } else {
-      startAutoSpin();
-    }
-  };
+  // ── Derived interpolations ──
 
-  const startAutoSpin = () => {
-    setIsAutoSpinning(true);
-
-    autoSpinAnim.current = Animated.loop(
-      Animated.timing(rotateYAnim, {
-        toValue: currentDegY.current + 360,
-        duration: 3500,
-        useNativeDriver: false,
-      })
-    );
-
-    // Track rotation angle to toggle back vs front sprite during auto-spin
-    const listenerId = rotateYAnim.addListener(({ value }) => {
-      const normalizedY = ((value % 360) + 360) % 360;
-      if (normalizedY > 90 && normalizedY < 270) {
-        setShowBackView(true);
-      } else {
-        setShowBackView(false);
-      }
-      currentDegY.current = value;
-    });
-
-    autoSpinAnim.current.start();
-  };
-
-  const stopAutoSpin = () => {
-    if (autoSpinAnim.current) {
-      autoSpinAnim.current.stop();
-    }
-    rotateYAnim.removeAllListeners();
-    setIsAutoSpinning(false);
-  };
-
-  // Interpolate rotation angles into string degree values
-  const rotateYString = rotateYAnim.interpolate({
-    inputRange: [-36000, 36000],
-    outputRange: ["-36000deg", "36000deg"],
+  // Perspective rotations (max ±25deg)
+  const rotateY = tiltX.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ["-25deg", "25deg"],
+  });
+  const rotateX = tiltY.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ["25deg", "-25deg"],
   });
 
-  const rotateXString = rotateXAnim.interpolate({
-    inputRange: [-36000, 36000],
-    outputRange: ["-36000deg", "36000deg"],
+  // Shadow shifts opposite to tilt for grounded feel
+  const shadowOffsetX = tiltX.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [8, -8],
+  });
+  const shadowOffsetY = tiltY.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-4, 12],
+  });
+  const shadowScale = tiltY.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [0.65, 0.8, 0.95],
+  });
+  const shadowOpacity = tiltY.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [0.08, 0.18, 0.28],
   });
 
-  const activeImage = showBackView && backImageUri ? backImageUri : imageUri;
+  // Specular highlight moves with tilt
+  const highlightX = tiltX.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ["-50%", "50%"],
+  });
+  const highlightY = tiltY.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ["-40%", "60%"],
+  });
+  const highlightOpacity = tiltX.interpolate({
+    inputRange: [-1, -0.2, 0, 0.2, 1],
+    outputRange: [0.3, 0.08, 0.04, 0.08, 0.3],
+  });
+
+  // Slight translucent edge glow color shift
+  const edgeGlowOpacity = tiltX.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [0.25, 0, 0.25],
+  });
+
+  const platformSize = size * 0.65;
 
   return (
-    <View style={styles.outerContainer}>
+    <View style={[styles.wrapper, { width: size + 10, height: size + 32 }]}>
+      {/* ── Ground Shadow (ellipse below the pokemon) ── */}
+      <Animated.View
+        style={[
+          styles.groundShadow,
+          {
+            width: platformSize,
+            height: 14,
+            bottom: 4,
+            opacity: shadowOpacity,
+            transform: [
+              { translateX: shadowOffsetX },
+              { translateY: shadowOffsetY },
+              { scaleX: shadowScale },
+            ],
+          },
+        ]}
+      />
+
+      {/* ── 3D Tilting Container ── */}
       <Animated.View
         {...panResponder.panHandlers}
         style={[
-          styles.card3DContainer,
+          styles.tiltContainer,
           {
             width: size,
             height: size,
             transform: [
-              { perspective: 900 },
-              { scale: scaleAnim },
-              { rotateX: rotateXString },
-              { rotateY: rotateYString },
+              { perspective: 600 },
+              { scale: liftScale },
+              { rotateX },
+              { rotateY },
             ],
           },
         ]}
       >
-        {/* Dynamic 3D Ground Drop Shadow */}
-        <View style={[styles.dropShadow, { width: size * 0.7, height: 12 }]} />
-
-        {/* High-Res Pokémon Sprite */}
+        {/* Pokémon Image */}
         <Image
-          source={{ uri: activeImage }}
-          style={[
-            { width: size - 10, height: size - 10 },
-            showBackView && styles.backViewFlipped,
-          ]}
+          source={{ uri: imageUri }}
+          style={{ width: size - 8, height: size - 8 }}
           resizeMode="contain"
         />
-      </Animated.View>
 
-      {/* Control Actions Row */}
-      <View style={styles.controlsRow}>
-        <TouchableOpacity
-          style={[styles.actionChip, isAutoSpinning && styles.actionChipActive]}
-          activeOpacity={0.8}
-          onPress={toggleAutoSpin}
-        >
-          <Text style={[styles.actionChipText, isAutoSpinning && styles.actionChipTextActive]}>
-            {isAutoSpinning ? "⏸️ Pause 360°" : "🔄 Auto 360° Spin"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* ── Specular Highlight Overlay ── */}
+        <Animated.View
+          style={[
+            styles.specularHighlight,
+            {
+              left: highlightX,
+              top: highlightY,
+              opacity: highlightOpacity,
+            },
+          ]}
+          pointerEvents="none"
+        />
+
+        {/* ── Edge Rim Light ── */}
+        <Animated.View
+          style={[
+            styles.edgeRimLight,
+            {
+              opacity: edgeGlowOpacity,
+            },
+          ]}
+          pointerEvents="none"
+        />
+      </Animated.View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  card3DContainer: {
+  wrapper: {
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
-  dropShadow: {
+  groundShadow: {
     position: "absolute",
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.15)",
+    backgroundColor: "#1A2050",
     borderRadius: 50,
+    alignSelf: "center",
   },
-  backViewFlipped: {
-    transform: [{ scaleX: -1 }], // Natural mirror flip for back view
-  },
-  controlsRow: {
-    marginTop: 8,
-    flexDirection: "row",
+  tiltContainer: {
     alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
+    position: "relative",
   },
-  actionChip: {
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  specularHighlight: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+  edgeRimLight: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-  },
-  actionChipActive: {
-    backgroundColor: "#1D4ED8",
-    borderColor: "#1D4ED8",
-  },
-  actionChipText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#1D4ED8",
-  },
-  actionChipTextActive: {
-    color: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.6)",
   },
 });
