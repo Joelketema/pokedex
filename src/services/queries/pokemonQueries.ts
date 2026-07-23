@@ -44,12 +44,17 @@ export const transformPokemonDetail = (data: PokemonDetail): FormattedPokemon =>
     data.sprites.front_default ||
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.id}.png`;
 
+  const backImage =
+    data.sprites.back_default ||
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${data.id}.png`;
+
   return {
     id: data.id,
     formattedId: formatPokemonId(data.id),
     name: data.name,
     displayName: data.name.charAt(0).toUpperCase() + data.name.slice(1),
     image,
+    backImage,
     types: data.types.map((t) => t.type.name),
     heightFormatted,
     weightFormatted,

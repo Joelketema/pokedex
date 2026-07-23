@@ -1,99 +1,159 @@
-import React, { useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   Image,
   Animated,
   PanResponder,
+  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 
 interface Interactive3DPokemonProps {
   imageUri: string;
+  backImageUri?: string;
   pokemonName: string;
   size?: number;
 }
 
 export const Interactive3DPokemon: React.FC<Interactive3DPokemonProps> = ({
   imageUri,
+  backImageUri,
   pokemonName,
-  size = 140,
+  size = 145,
 }) => {
-  // Animated values for 3D tilt
-  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const scale = useRef(new Animated.Value(1)).current;
-  const shadowOpacity = useRef(new Animated.Value(0.15)).current;
+  const [isAutoSpinning, setIsAutoSpinning] = useState(false);
+  const [showBackView, setShowBackView] = useState(false);
 
-  // PanResponder to intercept drag gestures
+  // Animated rotation values
+  const rotateYAnim = useRef(new Animated.Value(0)).current;
+  const rotateXAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Auto-spin animation reference
+  const autoSpinAnim = useRef<Animated.CompositeAnimation | null>(null);
+
+  // Previous touch position memory
+  const lastX = useRef(0);
+  const lastY = useRef(0);
+  const currentDegY = useRef(0);
+  const currentDegX = useRef(0);
+
+  // Handle continuous rotation calculation & front/back flip detection
+  const updateRotation = (degY: number, degX: number) => {
+    currentDegY.current = degY;
+    currentDegX.current = degX;
+
+    rotateYAnim.setValue(degY);
+    rotateXAnim.setValue(degX);
+
+    // Normalize angle to 0-360 range to check front vs back
+    const normalizedY = ((degY % 360) + 360) % 360;
+    if (normalizedY > 90 && normalizedY < 270) {
+      setShowBackView(true);
+    } else {
+      setShowBackView(false);
+    }
+  };
+
+  // PanResponder for continuous 360° manual drag gesture
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
 
       onPanResponderGrant: () => {
-        Animated.spring(scale, {
+        if (isAutoSpinning) {
+          stopAutoSpin();
+        }
+        Animated.spring(scaleAnim, {
           toValue: 1.15,
           friction: 5,
-          useNativeDriver: false,
-        }).start();
-        Animated.timing(shadowOpacity, {
-          toValue: 0.35,
-          duration: 150,
           useNativeDriver: false,
         }).start();
       },
 
       onPanResponderMove: (evt, gestureState) => {
-        // Clamp touch distance to +/- 60px
-        const maxOffset = 60;
-        const clampedX = Math.max(-maxOffset, Math.min(maxOffset, gestureState.dx));
-        const clampedY = Math.max(-maxOffset, Math.min(maxOffset, gestureState.dy));
+        // Map 1px touch movement to 1.5 degrees rotation
+        const deltaX = gestureState.dx - lastX.current;
+        const deltaY = gestureState.dy - lastY.current;
 
-        pan.setValue({ x: clampedX, y: clampedY });
+        lastX.current = gestureState.dx;
+        lastY.current = gestureState.dy;
+
+        const nextDegY = currentDegY.current + deltaX * 1.5;
+        const nextDegX = currentDegX.current - deltaY * 1.5;
+
+        updateRotation(nextDegY, nextDegX);
       },
 
       onPanResponderRelease: () => {
-        // Spring recoil back to center position
-        Animated.parallel([
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            friction: 4,
-            tension: 40,
-            useNativeDriver: false,
-          }),
-          Animated.spring(scale, {
-            toValue: 1,
-            friction: 5,
-            useNativeDriver: false,
-          }),
-          Animated.timing(shadowOpacity, {
-            toValue: 0.15,
-            duration: 250,
-            useNativeDriver: false,
-          }),
-        ]).start();
+        lastX.current = 0;
+        lastY.current = 0;
+
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 5,
+          useNativeDriver: false,
+        }).start();
       },
     })
   ).current;
 
-  // Interpolate pan offsets to 3D rotation angles
-  const rotateY = pan.x.interpolate({
-    inputRange: [-60, 60],
-    outputRange: ["-35deg", "35deg"],
-    extrapolate: "clamp",
+  // Toggle Auto 360° Continuous Spin
+  const toggleAutoSpin = () => {
+    if (isAutoSpinning) {
+      stopAutoSpin();
+    } else {
+      startAutoSpin();
+    }
+  };
+
+  const startAutoSpin = () => {
+    setIsAutoSpinning(true);
+
+    autoSpinAnim.current = Animated.loop(
+      Animated.timing(rotateYAnim, {
+        toValue: currentDegY.current + 360,
+        duration: 3500,
+        useNativeDriver: false,
+      })
+    );
+
+    // Track rotation angle to toggle back vs front sprite during auto-spin
+    const listenerId = rotateYAnim.addListener(({ value }) => {
+      const normalizedY = ((value % 360) + 360) % 360;
+      if (normalizedY > 90 && normalizedY < 270) {
+        setShowBackView(true);
+      } else {
+        setShowBackView(false);
+      }
+      currentDegY.current = value;
+    });
+
+    autoSpinAnim.current.start();
+  };
+
+  const stopAutoSpin = () => {
+    if (autoSpinAnim.current) {
+      autoSpinAnim.current.stop();
+    }
+    rotateYAnim.removeAllListeners();
+    setIsAutoSpinning(false);
+  };
+
+  // Interpolate rotation angles into string degree values
+  const rotateYString = rotateYAnim.interpolate({
+    inputRange: [-36000, 36000],
+    outputRange: ["-36000deg", "36000deg"],
   });
 
-  const rotateX = pan.y.interpolate({
-    inputRange: [-60, 60],
-    outputRange: ["35deg", "-35deg"],
-    extrapolate: "clamp",
+  const rotateXString = rotateXAnim.interpolate({
+    inputRange: [-36000, 36000],
+    outputRange: ["-36000deg", "36000deg"],
   });
 
-  const shineTranslateX = pan.x.interpolate({
-    inputRange: [-60, 60],
-    outputRange: [-40, 40],
-    extrapolate: "clamp",
-  });
+  const activeImage = showBackView && backImageUri ? backImageUri : imageUri;
 
   return (
     <View style={styles.outerContainer}>
@@ -105,48 +165,39 @@ export const Interactive3DPokemon: React.FC<Interactive3DPokemonProps> = ({
             width: size,
             height: size,
             transform: [
-              { perspective: 800 },
-              { scale },
-              { rotateX },
-              { rotateY },
+              { perspective: 900 },
+              { scale: scaleAnim },
+              { rotateX: rotateXString },
+              { rotateY: rotateYString },
             ],
           },
         ]}
       >
         {/* Dynamic 3D Ground Drop Shadow */}
-        <Animated.View
-          style={[
-            styles.dropShadow,
-            {
-              width: size * 0.75,
-              height: 14,
-              opacity: shadowOpacity,
-            },
-          ]}
-        />
+        <View style={[styles.dropShadow, { width: size * 0.7, height: 12 }]} />
 
         {/* High-Res Pokémon Sprite */}
         <Image
-          source={{ uri: imageUri }}
-          style={{ width: size - 10, height: size - 10 }}
-          resizeMode="contain"
-        />
-
-        {/* Dynamic Holographic Light Reflective Sheen Layer */}
-        <Animated.View
+          source={{ uri: activeImage }}
           style={[
-            styles.shineOverlay,
-            {
-              transform: [{ translateX: shineTranslateX }],
-            },
+            { width: size - 10, height: size - 10 },
+            showBackView && styles.backViewFlipped,
           ]}
-          pointerEvents="none"
+          resizeMode="contain"
         />
       </Animated.View>
 
-      {/* Interactive Helper Label */}
-      <View style={styles.hintBadge}>
-        <Text style={styles.hintBadgeText}>🎮 Touch & Drag 3D</Text>
+      {/* Control Actions Row */}
+      <View style={styles.controlsRow}>
+        <TouchableOpacity
+          style={[styles.actionChip, isAutoSpinning && styles.actionChipActive]}
+          activeOpacity={0.8}
+          onPress={toggleAutoSpin}
+        >
+          <Text style={[styles.actionChipText, isAutoSpinning && styles.actionChipTextActive]}>
+            {isAutoSpinning ? "⏸️ Pause 360°" : "🔄 Auto 360° Spin"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -164,32 +215,36 @@ const styles = StyleSheet.create({
   },
   dropShadow: {
     position: "absolute",
-    bottom: 2,
-    backgroundColor: "#000000",
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.15)",
     borderRadius: 50,
   },
-  shineOverlay: {
-    position: "absolute",
-    top: -20,
-    left: -20,
-    width: "160%",
-    height: "160%",
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
-    transform: [{ rotate: "25deg" }],
-    borderRadius: 30,
+  backViewFlipped: {
+    transform: [{ scaleX: -1 }], // Natural mirror flip for back view
   },
-  hintBadge: {
-    marginTop: 6,
+  controlsRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionChip: {
     backgroundColor: "#EFF6FF",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#BFDBFE",
   },
-  hintBadgeText: {
-    fontSize: 10,
+  actionChipActive: {
+    backgroundColor: "#1D4ED8",
+    borderColor: "#1D4ED8",
+  },
+  actionChipText: {
+    fontSize: 11,
     fontWeight: "700",
     color: "#1D4ED8",
+  },
+  actionChipTextActive: {
+    color: "#FFFFFF",
   },
 });

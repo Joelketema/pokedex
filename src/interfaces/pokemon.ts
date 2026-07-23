@@ -45,6 +45,7 @@ export interface PokemonDetail {
   moves: PokemonMoveSlot[];
   sprites: {
     front_default: string;
+    back_default?: string;
     other?: {
       "official-artwork"?: {
         front_default: string;
@@ -62,6 +63,7 @@ export interface FormattedPokemon {
   name: string;
   displayName: string;
   image: string;
+  backImage?: string;
   types: string[];
   heightFormatted: string; // e.g. 2'04" (0.7m)
   weightFormatted: string; // e.g. 15.4 lbs (7.0 kg)
