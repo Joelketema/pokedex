@@ -7,6 +7,7 @@ import {
   Dimensions,
   StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
 
@@ -17,6 +18,8 @@ interface AnimatedSplashScreenProps {
 export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
   onFinish,
 }) => {
+  const insets = useSafeAreaInsets();
+
   // Animation values
   const textScale = useRef(new Animated.Value(0.3)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -27,6 +30,9 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
   const pokeballRotate = useRef(new Animated.Value(0)).current;
   const flashOpacity = useRef(new Animated.Value(0)).current;
   const splashOpacity = useRef(new Animated.Value(1)).current;
+
+  // Calculate exact vertical center offset for screen stage
+  const stageTop = Math.max((height - 240) / 2, insets.top + 40);
 
   useEffect(() => {
     // Sequence of Splash Animations
@@ -136,7 +142,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
       </View>
 
       {/* Center Screen Stage holding Text and Pokeball centered together */}
-      <View style={styles.centerStage}>
+      <View style={[styles.centerStage, { top: stageTop }]}>
         {/* Animated PokéDex Title above Pokeball */}
         <Animated.View
           style={[
@@ -191,12 +197,17 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "#1A50E2",
-    justifyContent: "center",
-    alignItems: "center",
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 999,
   },
   bgRingContainer: {
-    position: "absolute",
+    ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -216,6 +227,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.12)",
   },
   centerStage: {
+    position: "absolute",
+    left: 0,
+    right: 0,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -225,7 +239,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   appTitle: {
-    fontSize: 46,
+    fontSize: 44,
     fontWeight: "900",
     color: "#FFFFFF",
     letterSpacing: 2,
@@ -269,7 +283,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: "50%",
-    backgroundColor: "#EE1515", // Classic Pokemon Go Red
+    backgroundColor: "#EE1515",
   },
   bottomWhite: {
     position: "absolute",
@@ -277,7 +291,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: "50%",
-    backgroundColor: "#FFFFFF", // Classic Pokeball White
+    backgroundColor: "#FFFFFF",
   },
   blackBand: {
     position: "absolute",

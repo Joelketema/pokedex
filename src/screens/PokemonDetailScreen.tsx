@@ -13,6 +13,7 @@ import { PokeballHeader } from "../components/PokeballHeader";
 import { TypeBadge } from "../components/TypeBadge";
 import { StatBar } from "../components/StatBar";
 import { Interactive3DPokemon } from "../components/Interactive3DPokemon";
+import { PokemonDetailSkeleton } from "../components/PokemonDetailSkeleton";
 import { FormattedPokemon } from "../interfaces/pokemon";
 
 interface PokemonDetailScreenProps {
@@ -28,7 +29,7 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
   const [showAllMoves, setShowAllMoves] = useState(false);
 
   // Fetch full details if needed, or fallback to initial
-  const { data: detailData } = useGetPokemonDetail(initialPokemon.name);
+  const { data: detailData, isLoading } = useGetPokemonDetail(initialPokemon.name);
   const pokemon = detailData || initialPokemon;
 
   const topPadding = (insets.top > 0 ? insets.top : (StatusBar.currentHeight || 20)) + 8;
@@ -56,8 +57,12 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Card 1: Main Stats Card */}
-        <View style={styles.card}>
+        {isLoading ? (
+          <PokemonDetailSkeleton />
+        ) : (
+          <>
+            {/* Card 1: Main Stats Card */}
+            <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View>
               <Text style={styles.idText}>{pokemon.formattedId}</Text>
@@ -148,6 +153,8 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
             )}
           </View>
         </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );

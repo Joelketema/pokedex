@@ -16,6 +16,7 @@ import { useGetPokemonList, fetchPokemonDetail } from "../services/queries/pokem
 import { PokemonCard } from "../components/PokemonCard";
 import { PokeballHeader } from "../components/PokeballHeader";
 import { PokemonSkeleton } from "../components/PokemonSkeleton";
+import { Toast } from "../components/Toast";
 import { FormattedPokemon } from "../interfaces/pokemon";
 
 // Custom vector sort icons (pure React Native primitives)
@@ -154,6 +155,14 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
   return (
     <View style={styles.rootContainer}>
       <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
+
+      {/* Floating Error Toast Notification */}
+      <Toast
+        visible={!!searchError}
+        message={searchError || ""}
+        type="error"
+        onDismiss={() => setSearchError(null)}
+      />
 
       {/* Top Banner with Safe Area Inset & Pokeball Watermark */}
       <View style={[styles.headerBanner, { paddingTop: topPadding }]}>
