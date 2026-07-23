@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   View,
+  Text,
   Image,
   Animated,
   PanResponder,
@@ -22,7 +23,28 @@ export const Interactive3DPokemon: React.FC<Interactive3DPokemonProps> = ({
   const tiltX = useRef(new Animated.Value(0)).current; // -1 to 1
   const tiltY = useRef(new Animated.Value(0)).current; // -1 to 1
   const liftScale = useRef(new Animated.Value(1)).current;
+  const hintOpacity = useRef(new Animated.Value(0.7)).current;
   const isPressed = useRef(false);
+
+  // Gentle pulse animation for the interactive hint badge
+  useEffect(() => {
+    const pulseAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(hintOpacity, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(hintOpacity, {
+          toValue: 0.5,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnim.start();
+    return () => pulseAnim.stop();
+  }, [hintOpacity]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -129,78 +151,89 @@ export const Interactive3DPokemon: React.FC<Interactive3DPokemonProps> = ({
   const platformSize = size * 0.65;
 
   return (
-    <View style={[styles.wrapper, { width: size + 10, height: size + 32 }]}>
-      {/* ── Ground Shadow (ellipse below the pokemon) ── */}
-      <Animated.View
-        style={[
-          styles.groundShadow,
-          {
-            width: platformSize,
-            height: 14,
-            bottom: 4,
-            opacity: shadowOpacity,
-            transform: [
-              { translateX: shadowOffsetX },
-              { translateY: shadowOffsetY },
-              { scaleX: shadowScale },
-            ],
-          },
-        ]}
-      />
-
-      {/* ── 3D Tilting Container ── */}
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[
-          styles.tiltContainer,
-          {
-            width: size,
-            height: size,
-            transform: [
-              { perspective: 600 },
-              { scale: liftScale },
-              { rotateX },
-              { rotateY },
-            ],
-          },
-        ]}
-      >
-        {/* Pokémon Image */}
-        <Image
-          source={{ uri: imageUri }}
-          style={{ width: size - 8, height: size - 8 }}
-          resizeMode="contain"
-        />
-
-        {/* ── Specular Highlight Overlay ── */}
+    <View style={styles.outerWrapper}>
+      <View style={[styles.wrapper, { width: size + 10, height: size + 10 }]}>
+        {/* ── Ground Shadow (ellipse below the pokemon) ── */}
         <Animated.View
           style={[
-            styles.specularHighlight,
+            styles.groundShadow,
             {
-              left: highlightX,
-              top: highlightY,
-              opacity: highlightOpacity,
+              width: platformSize,
+              height: 14,
+              bottom: 4,
+              opacity: shadowOpacity,
+              transform: [
+                { translateX: shadowOffsetX },
+                { translateY: shadowOffsetY },
+                { scaleX: shadowScale },
+              ],
             },
           ]}
-          pointerEvents="none"
         />
 
-        {/* ── Edge Rim Light ── */}
+        {/* ── 3D Tilting Container ── */}
         <Animated.View
+          {...panResponder.panHandlers}
           style={[
-            styles.edgeRimLight,
+            styles.tiltContainer,
             {
-              opacity: edgeGlowOpacity,
+              width: size,
+              height: size,
+              transform: [
+                { perspective: 600 },
+                { scale: liftScale },
+                { rotateX },
+                { rotateY },
+              ],
             },
           ]}
-          pointerEvents="none"
-        />
+        >
+          {/* Pokémon Image */}
+          <Image
+            source={{ uri: imageUri }}
+            style={{ width: size - 8, height: size - 8 }}
+            resizeMode="contain"
+          />
+
+          {/* ── Specular Highlight Overlay ── */}
+          <Animated.View
+            style={[
+              styles.specularHighlight,
+              {
+                left: highlightX,
+                top: highlightY,
+                opacity: highlightOpacity,
+              },
+            ]}
+            pointerEvents="none"
+          />
+
+          {/* ── Edge Rim Light ── */}
+          <Animated.View
+            style={[
+              styles.edgeRimLight,
+              {
+                opacity: edgeGlowOpacity,
+              },
+            ]}
+            pointerEvents="none"
+          />
+        </Animated.View>
+      </View>
+
+      {/* ── Interactive Hint Badge ── */}
+      <Animated.View style={[styles.hintBadge, { opacity: hintOpacity }]}>
+        <Text style={styles.hintBadgeText}>Touch & Drag 3D</Text>
       </Animated.View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  outerWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   wrapper: {
     alignItems: "center",
     justifyContent: "center",
@@ -230,5 +263,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.6)",
+  },
+  hintBadge: {
+    marginTop: 4,
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  hintBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#1D4ED8",
   },
 });
