@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   ScrollView,
   StatusBar,
@@ -13,6 +12,7 @@ import { useGetPokemonDetail } from "../services/queries/pokemonQueries";
 import { PokeballHeader } from "../components/PokeballHeader";
 import { TypeBadge } from "../components/TypeBadge";
 import { StatBar } from "../components/StatBar";
+import { Interactive3DPokemon } from "../components/Interactive3DPokemon";
 import { FormattedPokemon } from "../interfaces/pokemon";
 
 interface PokemonDetailScreenProps {
@@ -39,7 +39,7 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
 
       {/* Top Blue Header Bar with Safe Area Top Inset & Pokeball Watermark */}
       <View style={[styles.headerBar, { paddingTop: topPadding, height: 60 + topPadding }]}>
-        <PokeballHeader size={180} opacity={0.22} />
+        <PokeballHeader size={110} opacity={1.0} topOffset={topPadding - 2} rightOffset={-10} />
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
@@ -72,7 +72,7 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
             </View>
           </View>
 
-          {/* Stats & Artwork Layout */}
+          {/* Stats & Interactive 3D Artwork Layout */}
           <View style={styles.statsBodyRow}>
             {/* Left Column: Stat Bars */}
             <View style={styles.statsColumn}>
@@ -82,12 +82,12 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
               <StatBar label="Speed" value={pokemon.stats.speed} color="#FF9D55" />
             </View>
 
-            {/* Right Column: High-Res Pokémon Sprite */}
+            {/* Right Column: Interactive 3D Pokémon Artwork */}
             <View style={styles.artworkColumn}>
-              <Image
-                source={{ uri: pokemon.image }}
-                style={styles.artworkImage}
-                resizeMode="contain"
+              <Interactive3DPokemon
+                imageUri={pokemon.image}
+                pokemonName={pokemon.displayName}
+                size={135}
               />
             </View>
           </View>
@@ -230,14 +230,9 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   artworkColumn: {
-    width: 135,
-    height: 135,
+    width: 140,
     alignItems: "center",
     justifyContent: "center",
-  },
-  artworkImage: {
-    width: 130,
-    height: 130,
   },
   sectionTitle: {
     fontSize: 18,
