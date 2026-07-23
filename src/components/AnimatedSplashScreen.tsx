@@ -7,7 +7,6 @@ import {
   Dimensions,
   StatusBar,
 } from "react-native";
-import { PokeballHeader } from "./PokeballHeader";
 
 const { width, height } = Dimensions.get("window");
 
@@ -21,8 +20,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
   // Animation values
   const textScale = useRef(new Animated.Value(0.3)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
-  const textTranslateY = useRef(new Animated.Value(20)).current;
-  const letterSpacing = useRef(new Animated.Value(0)).current;
+  const textTranslateY = useRef(new Animated.Value(-10)).current;
 
   const pokeballScale = useRef(new Animated.Value(0.2)).current;
   const pokeballOpacity = useRef(new Animated.Value(0)).current;
@@ -31,9 +29,9 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
   const splashOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Step 1: Pokeball & Text Fade In & Scale Up
+    // Sequence of Splash Animations
     Animated.sequence([
-      // 1. Pokeball appears in center
+      // 1. Pokeball appears at exact center
       Animated.parallel([
         Animated.timing(pokeballOpacity, {
           toValue: 1,
@@ -48,7 +46,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
         }),
       ]),
 
-      // 2. App Name "PokéDex" Spells out & Pops in
+      // 2. App Name "PokéDex" Spells out & Pops in above Pokeball
       Animated.parallel([
         Animated.timing(textOpacity, {
           toValue: 1,
@@ -69,17 +67,17 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
       ]),
 
       // 3. Pause briefly for visual impact
-      Animated.delay(600),
+      Animated.delay(650),
 
-      // 4. Pokeball Spins & Text Gets Sucked Into Pokeball
+      // 4. Pokeball Spins & Text Gets Sucked Directly Into Pokeball Center
       Animated.parallel([
-        // Pokeball spin
+        // Pokeball 720 degree spin
         Animated.timing(pokeballRotate, {
           toValue: 1,
-          duration: 700,
+          duration: 650,
           useNativeDriver: true,
         }),
-        // Text shrink & sucked into Pokeball core
+        // Text shrinks & translates down into the exact center of Pokeball
         Animated.timing(textScale, {
           toValue: 0,
           duration: 600,
@@ -87,11 +85,11 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
         }),
         Animated.timing(textOpacity, {
           toValue: 0,
-          duration: 500,
+          duration: 450,
           useNativeDriver: true,
         }),
         Animated.timing(textTranslateY, {
-          toValue: 90, // sucked down into center pokeball
+          toValue: 140, // Sucked down into center Pokeball
           duration: 600,
           useNativeDriver: true,
         }),
@@ -131,51 +129,54 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
     <Animated.View style={[styles.container, { opacity: splashOpacity }]}>
       <StatusBar barStyle="light-content" backgroundColor="#1A50E2" translucent />
 
-      {/* Decorative Background Rings */}
+      {/* Decorative Background Concentric Rings */}
       <View style={styles.bgRingContainer}>
         <View style={styles.bgRingOuter} />
         <View style={styles.bgRingInner} />
       </View>
 
-      {/* Animated PokéDex Title */}
-      <Animated.View
-        style={[
-          styles.textWrapper,
-          {
-            opacity: textOpacity,
-            transform: [
-              { scale: textScale },
-              { translateY: textTranslateY },
-            ],
-          },
-        ]}
-      >
-        <Text style={styles.appTitle}>PokéDex</Text>
-        <Text style={styles.subtitle}>GOTTA CATCH 'EM ALL!</Text>
-      </Animated.View>
+      {/* Center Screen Stage holding Text and Pokeball centered together */}
+      <View style={styles.centerStage}>
+        {/* Animated PokéDex Title above Pokeball */}
+        <Animated.View
+          style={[
+            styles.textWrapper,
+            {
+              opacity: textOpacity,
+              transform: [
+                { scale: textScale },
+                { translateY: textTranslateY },
+              ],
+            },
+          ]}
+        >
+          <Text style={styles.appTitle}>PokéDex</Text>
+          <Text style={styles.subtitle}>GOTTA CATCH 'EM ALL!</Text>
+        </Animated.View>
 
-      {/* Center Pokeball Suction Core */}
-      <Animated.View
-        style={[
-          styles.pokeballWrapper,
-          {
-            opacity: pokeballOpacity,
-            transform: [
-              { scale: pokeballScale },
-              { rotate: spin },
-            ],
-          },
-        ]}
-      >
-        <View style={styles.ballOuter}>
-          <View style={styles.topRed} />
-          <View style={styles.bottomWhite} />
-          <View style={styles.blackBand} />
-          <View style={styles.buttonRing}>
-            <View style={styles.buttonCore} />
+        {/* Center Pokeball Suction Core */}
+        <Animated.View
+          style={[
+            styles.pokeballWrapper,
+            {
+              opacity: pokeballOpacity,
+              transform: [
+                { scale: pokeballScale },
+                { rotate: spin },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.ballOuter}>
+            <View style={styles.topRed} />
+            <View style={styles.bottomWhite} />
+            <View style={styles.blackBand} />
+            <View style={styles.buttonRing}>
+              <View style={styles.buttonCore} />
+            </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </View>
 
       {/* Flash Catch Glow Effect */}
       <Animated.View
@@ -214,13 +215,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.12)",
   },
+  centerStage: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   textWrapper: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 28,
     zIndex: 10,
   },
   appTitle: {
-    fontSize: 48,
+    fontSize: 46,
     fontWeight: "900",
     color: "#FFFFFF",
     letterSpacing: 2,
@@ -236,17 +241,17 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   pokeballWrapper: {
-    width: 140,
-    height: 140,
+    width: 130,
+    height: 130,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 5,
   },
   ballOuter: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    borderWidth: 7,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 6,
     borderColor: "#101C50",
     overflow: "hidden",
     justifyContent: "center",
@@ -277,25 +282,25 @@ const styles = StyleSheet.create({
   blackBand: {
     position: "absolute",
     width: "140%",
-    height: 14,
+    height: 12,
     backgroundColor: "#101C50",
     zIndex: 1,
   },
   buttonRing: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "#FFFFFF",
-    borderWidth: 6,
+    borderWidth: 5,
     borderColor: "#101C50",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
   },
   buttonCore: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: "#FFFFFF",
     borderWidth: 2,
     borderColor: "#101C50",
