@@ -1,6 +1,8 @@
 # 📱 PokéDex - Senior Developer Assessment App (Expo & React Native)
 
-A premium, production-ready Pokémon mobile application built with **Expo**, **TypeScript**, **React Native Paper**, **NativeWind (Tailwind CSS)**, and **TanStack React Query**.
+[![Download APK](https://img.shields.io/badge/📥_Download_Android_APK-Direct_Download-1A50E2?style=for-the-badge&logo=android)](https://github.com/your-username/pokedex/releases/latest)
+
+A premium, production-ready Pokémon mobile application built with **Expo**, **TypeScript**, **React Native Paper**, **NativeWind (Tailwind CSS)**, and **TanStack Query**.
 
 Designed with clean architecture, interactive 3D perspective artwork, custom animated splash screens, predictive search autofill, alphabetical sorting, skeleton loading states, and robust error handling.
 
