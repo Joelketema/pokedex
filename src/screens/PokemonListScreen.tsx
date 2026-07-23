@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   StyleSheet,
   Platform,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetPokemonList, fetchPokemonDetail } from "../services/queries/pokemonQueries";
@@ -21,6 +22,8 @@ interface PokemonListScreenProps {
   onSelectPokemon: (pokemon: FormattedPokemon) => void;
 }
 
+type SortOption = "id" | "az" | "za";
+
 export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
   onSelectPokemon,
 }) => {
@@ -29,6 +32,8 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
   const [searchedPokemon, setSearchedPokemon] = useState<FormattedPokemon | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("id");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const {
     data,
@@ -49,37 +54,83 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
     return data.pages.flatMap((page) => page.results);
   }, [data]);
 
-  // Handle GO button search execution
-  const handleSearch = async () => {
-    const trimmed = searchQuery.trim().toLowerCase();
-    if (!trimmed) {
+  // Predictive search suggestions filter
+  const suggestions = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return allPokemon
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.formattedId.toLowerCase().includes(query)
+      )
+      .slice(0, 5); // Limit top 5 suggestions
+  }, [allPokemon, searchQuery]);
+
+  // Sort Pokemon list based on selected option
+  const sortedPokemonList = useMemo(() => {
+    const list = searchedPokemon ? [searchedPokemon] : [...allPokemon];
+    if (searchedPokemon) return list;
+
+    if (sortBy === "az") {
+      return list.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    } else if (sortBy === "za") {
+      return list.sort((a, b) => b.displayName.localeCompare(a.displayName));
+    } else {
+      return list.sort((a, b) => a.id - b.id);
+    }
+  }, [allPokemon, searchedPokemon, sortBy]);
+
+  // Handle search execution
+  const handleSearch = async (overrideQuery?: string) => {
+    const queryToSearch = (overrideQuery !== undefined ? overrideQuery : searchQuery)
+      .trim()
+      .toLowerCase();
+
+    if (!queryToSearch) {
       setSearchedPokemon(null);
       setSearchError(null);
+      setShowSuggestions(false);
       return;
     }
 
     setIsSearching(true);
     setSearchError(null);
+    setShowSuggestions(false);
 
     try {
-      const result = await fetchPokemonDetail(trimmed);
+      const result = await fetchPokemonDetail(queryToSearch);
       setSearchedPokemon(result);
     } catch (err) {
       setSearchedPokemon(null);
-      setSearchError(`No Pokémon found matching "${searchQuery}"`);
+      setSearchError(`No Pokémon found matching "${queryToSearch}"`);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSelectSuggestion = (item: FormattedPokemon) => {
+    setSearchQuery(item.displayName);
+    setShowSuggestions(false);
+    setSearchedPokemon(item);
   };
 
   const clearSearch = () => {
     setSearchQuery("");
     setSearchedPokemon(null);
     setSearchError(null);
+    setShowSuggestions(false);
   };
 
-  // Determine list items to render
-  const displayList = searchedPokemon ? [searchedPokemon] : allPokemon;
+  // Performance-optimized renderItem for FlatList
+  const renderItem = useCallback(
+    ({ item }: { item: FormattedPokemon }) => (
+      <PokemonCard pokemon={item} onPress={onSelectPokemon} />
+    ),
+    [onSelectPokemon]
+  );
+
+  const keyExtractor = useCallback((item: FormattedPokemon) => item.id.toString(), []);
 
   return (
     <View style={styles.rootContainer}>
@@ -87,40 +138,98 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
 
       {/* Top Banner with Safe Area Inset & Pokeball Watermark */}
       <View style={[styles.headerBanner, { paddingTop: topPadding }]}>
-        <PokeballHeader size={200} opacity={0.22} />
+        <PokeballHeader size={125} opacity={1.0} topOffset={topPadding - 8} rightOffset={-10} />
 
         <Text style={styles.titleText}>Who are you{"\n"}looking for?</Text>
 
-        {/* Search Pill Input with GO Button */}
-        <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="E.g. Pikachu"
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              if (!text) clearSearch();
-            }}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.goButton}
-            activeOpacity={0.8}
-            onPress={handleSearch}
-          >
-            <Text style={styles.goButtonText}>GO</Text>
-          </TouchableOpacity>
+        {/* Search Input Container */}
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="E.g. Pikachu or Pi-"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                setShowSuggestions(text.trim().length > 0);
+                if (!text) clearSearch();
+              }}
+              onFocus={() => {
+                if (searchQuery.trim().length > 0) setShowSuggestions(true);
+              }}
+              onSubmitEditing={() => handleSearch()}
+              returnKeyType="search"
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.goButton}
+              activeOpacity={0.8}
+              onPress={() => handleSearch()}
+            >
+              <Text style={styles.goButtonText}>GO</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Predictive Search Suggestions Dropdown Overlay */}
+          {showSuggestions && suggestions.length > 0 && (
+            <View style={styles.suggestionsContainer}>
+              {suggestions.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.suggestionItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleSelectSuggestion(item)}
+                >
+                  <Text style={styles.suggestionName}>{item.displayName}</Text>
+                  <Text style={styles.suggestionId}>{item.formattedId}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </View>
 
       {/* Body / Pokémon Grid Section */}
       <View style={styles.contentContainer}>
+        {/* Alphabetical & ID Sorting Control Bar */}
+        {!isLoading && !isSearching && !isError && !searchError && (
+          <View style={styles.sortBar}>
+            <Text style={styles.sortLabel}>Sort by:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <TouchableOpacity
+                style={[styles.sortChip, sortBy === "id" && styles.sortChipActive]}
+                onPress={() => setSortBy("id")}
+              >
+                <Text style={[styles.sortChipText, sortBy === "id" && styles.sortChipTextActive]}>
+                  🔢 ID #
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sortChip, sortBy === "az" && styles.sortChipActive]}
+                onPress={() => setSortBy("az")}
+              >
+                <Text style={[styles.sortChipText, sortBy === "az" && styles.sortChipTextActive]}>
+                  🔤 A - Z
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sortChip, sortBy === "za" && styles.sortChipActive]}
+                onPress={() => setSortBy("za")}
+              >
+                <Text style={[styles.sortChipText, sortBy === "za" && styles.sortChipTextActive]}>
+                  🔤 Z - A
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
+
         {isLoading || isSearching ? (
-          /* Render Skeleton Loader instead of spinner */
+          /* Render Animated Skeleton Loader */
           <PokemonSkeleton />
         ) : isError ? (
           <View style={styles.centerContainer}>
@@ -138,12 +247,10 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
           </View>
         ) : (
           <FlatList
-            data={displayList}
-            keyExtractor={(item) => item.id.toString()}
+            data={sortedPokemonList}
+            keyExtractor={keyExtractor}
             numColumns={2}
-            renderItem={({ item }) => (
-              <PokemonCard pokemon={item} onPress={onSelectPokemon} />
-            )}
+            renderItem={renderItem}
             contentContainerStyle={styles.gridContent}
             onEndReached={() => {
               if (hasNextPage && !isFetchingNextPage && !searchedPokemon) {
@@ -151,6 +258,11 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
               }
             }}
             onEndReachedThreshold={0.5}
+            // Performance optimizations for large lists
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+            removeClippedSubviews={Platform.OS === "android"}
             ListFooterComponent={
               isFetchingNextPage ? (
                 <View style={styles.footerLoader}>
@@ -175,7 +287,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
     position: "relative",
-    overflow: "hidden",
+    zIndex: 10,
   },
   titleText: {
     fontSize: 28,
@@ -183,6 +295,10 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     lineHeight: 34,
     marginBottom: 18,
+  },
+  searchWrapper: {
+    position: "relative",
+    zIndex: 50,
   },
   searchContainer: {
     flexDirection: "row",
@@ -192,10 +308,10 @@ const styles = StyleSheet.create({
     paddingLeft: 14,
     paddingRight: 6,
     paddingVertical: 6,
-    elevation: 3,
+    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 6,
   },
   searchIcon: {
@@ -221,6 +337,40 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 13,
   },
+  suggestionsContainer: {
+    position: "absolute",
+    top: 52,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 6,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    zIndex: 100,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  suggestionName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  suggestionId: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
   contentContainer: {
     flex: 1,
     backgroundColor: "#F3F4F6",
@@ -228,6 +378,39 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     paddingTop: 12,
     overflow: "hidden",
+  },
+  sortBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  sortLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4B5563",
+    marginRight: 8,
+  },
+  sortChip: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  sortChipActive: {
+    backgroundColor: "#1A50E2",
+    borderColor: "#1A50E2",
+  },
+  sortChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#4B5563",
+  },
+  sortChipTextActive: {
+    color: "#FFFFFF",
   },
   gridContent: {
     paddingHorizontal: 8,

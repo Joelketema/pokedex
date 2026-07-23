@@ -8,7 +8,7 @@ interface PokemonCardProps {
   onPress: (pokemon: FormattedPokemon) => void;
 }
 
-export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onPress }) => {
+const PokemonCardComponent: React.FC<PokemonCardProps> = ({ pokemon, onPress }) => {
   return (
     <TouchableOpacity
       style={styles.card}
@@ -42,6 +42,8 @@ export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onPress }) =>
   );
 };
 
+export const PokemonCard = React.memo(PokemonCardComponent);
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
   nameText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#2563EB", // Bright blue matching mockup
+    color: "#2563EB",
     flex: 1,
     marginRight: 4,
   },
