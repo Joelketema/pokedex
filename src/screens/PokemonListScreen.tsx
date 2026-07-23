@@ -6,13 +6,15 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetPokemonList, fetchPokemonDetail } from "../services/queries/pokemonQueries";
 import { PokemonCard } from "../components/PokemonCard";
 import { PokeballHeader } from "../components/PokeballHeader";
+import { PokemonSkeleton } from "../components/PokemonSkeleton";
 import { FormattedPokemon } from "../interfaces/pokemon";
 
 interface PokemonListScreenProps {
@@ -22,6 +24,7 @@ interface PokemonListScreenProps {
 export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
   onSelectPokemon,
 }) => {
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchedPokemon, setSearchedPokemon] = useState<FormattedPokemon | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -36,6 +39,9 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
     hasNextPage,
     isFetchingNextPage,
   } = useGetPokemonList(20);
+
+  // Calculate safe top padding dynamically
+  const topPadding = (insets.top > 0 ? insets.top : (StatusBar.currentHeight || 20)) + 12;
 
   // Flatten infinite query pages
   const allPokemon = useMemo(() => {
@@ -76,12 +82,12 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
   const displayList = searchedPokemon ? [searchedPokemon] : allPokemon;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A50E2" />
+    <View style={styles.rootContainer}>
+      <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
 
-      {/* Top Banner with Pokeball Watermark */}
-      <View style={styles.headerBanner}>
-        <PokeballHeader size={180} opacity={0.25} />
+      {/* Top Banner with Safe Area Inset & Pokeball Watermark */}
+      <View style={[styles.headerBanner, { paddingTop: topPadding }]}>
+        <PokeballHeader size={200} opacity={0.22} />
 
         <Text style={styles.titleText}>Who are you{"\n"}looking for?</Text>
 
@@ -114,10 +120,8 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
       {/* Body / Pokémon Grid Section */}
       <View style={styles.contentContainer}>
         {isLoading || isSearching ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#1A50E2" />
-            <Text style={styles.loadingText}>Loading Pokémon...</Text>
-          </View>
+          /* Render Skeleton Loader instead of spinner */
+          <PokemonSkeleton />
         ) : isError ? (
           <View style={styles.centerContainer}>
             <Text style={styles.errorText}>Failed to load Pokémon list.</Text>
@@ -157,20 +161,19 @@ export const PokemonListScreen: React.FC<PokemonListScreenProps> = ({
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  rootContainer: {
     flex: 1,
     backgroundColor: "#1A50E2",
   },
   headerBanner: {
     backgroundColor: "#1A50E2",
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 28,
+    paddingBottom: 24,
     position: "relative",
     overflow: "hidden",
   },
@@ -179,7 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#FFFFFF",
     lineHeight: 34,
-    marginBottom: 20,
+    marginBottom: 18,
   },
   searchContainer: {
     flexDirection: "row",
@@ -203,7 +206,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: "#1F2937",
-    paddingVertical: 4,
+    paddingVertical: Platform.OS === "ios" ? 8 : 4,
   },
   goButton: {
     backgroundColor: "#27272A",
@@ -235,12 +238,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: "#4B5563",
-    fontWeight: "500",
   },
   errorText: {
     fontSize: 15,

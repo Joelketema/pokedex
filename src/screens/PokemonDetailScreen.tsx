@@ -5,11 +5,10 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetPokemonDetail } from "../services/queries/pokemonQueries";
 import { PokeballHeader } from "../components/PokeballHeader";
 import { TypeBadge } from "../components/TypeBadge";
@@ -25,23 +24,27 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
   pokemon: initialPokemon,
   onBack,
 }) => {
+  const insets = useSafeAreaInsets();
   const [showAllMoves, setShowAllMoves] = useState(false);
 
   // Fetch full details if needed, or fallback to initial
-  const { data: detailData, isLoading } = useGetPokemonDetail(initialPokemon.name);
+  const { data: detailData } = useGetPokemonDetail(initialPokemon.name);
   const pokemon = detailData || initialPokemon;
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A50E2" />
+  const topPadding = (insets.top > 0 ? insets.top : (StatusBar.currentHeight || 20)) + 8;
 
-      {/* Top Blue Header Bar with Back Arrow & Pokeball Watermark */}
-      <View style={styles.headerBar}>
-        <PokeballHeader size={160} opacity={0.25} />
+  return (
+    <View style={styles.rootContainer}>
+      <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
+
+      {/* Top Blue Header Bar with Safe Area Top Inset & Pokeball Watermark */}
+      <View style={[styles.headerBar, { paddingTop: topPadding, height: 60 + topPadding }]}>
+        <PokeballHeader size={180} opacity={0.22} />
         <TouchableOpacity
           style={styles.backButton}
           onPress={onBack}
           activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Text style={styles.backArrowText}>←</Text>
         </TouchableOpacity>
@@ -146,17 +149,16 @@ export const PokemonDetailScreen: React.FC<PokemonDetailScreenProps> = ({
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  rootContainer: {
     flex: 1,
     backgroundColor: "#1A50E2",
   },
   headerBar: {
-    height: 70,
     backgroundColor: "#1A50E2",
     flexDirection: "row",
     alignItems: "center",

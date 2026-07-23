@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider as PaperProvider } from "react-native-paper";
 import { PokemonListScreen } from "./src/screens/PokemonListScreen";
@@ -21,22 +22,24 @@ export default function App() {
   const [selectedPokemon, setSelectedPokemon] = useState<FormattedPokemon | null>(null);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PaperProvider>
-        <View style={styles.container}>
-          {selectedPokemon ? (
-            <PokemonDetailScreen
-              pokemon={selectedPokemon}
-              onBack={() => setSelectedPokemon(null)}
-            />
-          ) : (
-            <PokemonListScreen
-              onSelectPokemon={(pokemon) => setSelectedPokemon(pokemon)}
-            />
-          )}
-        </View>
-      </PaperProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <PaperProvider>
+          <View style={styles.container}>
+            {selectedPokemon ? (
+              <PokemonDetailScreen
+                pokemon={selectedPokemon}
+                onBack={() => setSelectedPokemon(null)}
+              />
+            ) : (
+              <PokemonListScreen
+                onSelectPokemon={(pokemon) => setSelectedPokemon(pokemon)}
+              />
+            )}
+          </View>
+        </PaperProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
 
