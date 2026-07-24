@@ -8,6 +8,18 @@ Designed with clean architecture, interactive 3D perspective artwork, custom ani
 
 ---
 
+## 📸 Application Screenshots
+
+<p align="center">
+  <img src="assets/images/s1.jpg" width="30%" alt="Splash Screen" />
+  &nbsp;
+  <img src="assets/images/s2.jpg" width="30%" alt="Pokémon List Screen" />
+  &nbsp;
+  <img src="assets/images/s3.jpg" width="30%" alt="Pokémon Detail Screen" />
+</p>
+
+---
+
 ## ⚠️ Important Note on Expo Go Compatibility
 
 > **Note for Testers & Reviewers:**
@@ -101,9 +113,10 @@ npm test
 
 ```
 Pokémon/
-├── assets/                  # App icons, splash artwork, & adaptive icons
+├── assets/                  # App icons, splash artwork, & screenshots
 │   ├── icon.png             # 3D Pokéball app icon
-│   └── splash-icon.png
+│   ├── splash-icon.png
+│   └── images/              # App screenshots (s1.jpg, s2.jpg, s3.jpg)
 ├── src/
 │   ├── components/          # Reusable UI Components
 │   │   ├── AnimatedSplashScreen.tsx  # Custom Pokéball suction opening animation
